@@ -1,24 +1,18 @@
 <!DOCTYPE html>
 <html>
-
 <head>
 
-<title>IoT Arcing Monitoring</title>
+<title>Arcing Monitoring IoT</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 
 body{
-font-family:Arial;
-background:#0f172a;
+font-family: Arial;
+background:#0f1b2d;
 color:white;
 text-align:center;
-}
-
-.header{
-font-size:28px;
-padding:20px;
 }
 
 .container{
@@ -26,30 +20,41 @@ width:90%;
 margin:auto;
 }
 
-.grid{
-display:grid;
-grid-template-columns:1fr 1fr 1fr;
-gap:20px;
+.cards{
+display:flex;
+justify-content:space-around;
+margin-top:30px;
 }
 
 .card{
-background:#1e293b;
+background:#1f2e46;
 padding:20px;
 border-radius:10px;
+width:25%;
+}
+
+.card h2{
+margin:0;
+font-size:18px;
 }
 
 .value{
-font-size:24px;
-font-weight:bold;
+font-size:30px;
+margin-top:10px;
 }
 
 .status{
-font-size:30px;
-font-weight:bold;
+margin-top:30px;
+background:#1f2e46;
+padding:20px;
+border-radius:10px;
+font-size:28px;
 }
 
-canvas{
-background:white;
+.chartBox{
+margin-top:40px;
+background:#1f2e46;
+padding:20px;
 border-radius:10px;
 }
 
@@ -59,135 +64,132 @@ border-radius:10px;
 
 <body>
 
-<div class="header">
-ARCING MONITORING IoT SYSTEM
-</div>
+<h1>ARCING MONITORING IoT SYSTEM</h1>
 
 <div class="container">
 
-<div class="grid">
+<div class="cards">
 
 <div class="card">
-Sensor Cahaya
+<h2>Sensor Cahaya</h2>
 <div id="lightValue" class="value">0</div>
 </div>
 
 <div class="card">
-Tegangan AC
+<h2>Tegangan AC</h2>
 <div id="voltageValue" class="value">0</div>
 </div>
 
 <div class="card">
-Arus
+<h2>Arus</h2>
 <div id="currentValue" class="value">0</div>
 </div>
 
 </div>
 
-<br>
-
-<div class="card">
-Status Sistem
-<div id="status" class="status">Loading...</div>
+<div class="status" id="statusText">
+Loading...
 </div>
 
-<br>
+<div class="chartBox">
 
-<div class="card">
-<h3>Grafik Sensor Cahaya</h3>
-<canvas id="lightChart"></canvas>
-</div>
+<h2>Grafik Sensor Cahaya dan Arus</h2>
 
-<br>
+<canvas id="myChart"></canvas>
 
-<div class="card">
-<h3>Grafik Tegangan dan Arus</h3>
-<canvas id="powerChart"></canvas>
 </div>
 
 </div>
 
 <script>
 
-const API="PASTE_LINK_GOOGLE_SCRIPT_DISINI";
+const url = "https://script.google.com/macros/s/AKfycbwK2hZ5hap5A4XvCfd5_qN89Afojl4fh6gXWBYQDrQXmSn4O1TR2Bbc1WG1XI6Atn1L2g/exec";
 
-const lightChart=new Chart(
-document.getElementById("lightChart"),
-{
-type:"line",
-data:{
-labels:[],
-datasets:[{
-label:"Sensor Cahaya (V)",
-data:[],
-borderWidth:2
-}]
-},
-options:{animation:false}
-});
+const ctx = document.getElementById('myChart');
 
-const powerChart=new Chart(
-document.getElementById("powerChart"),
+const chart = new Chart(ctx, {
+
+type: 'line',
+
+data: {
+
+labels: [],
+
+datasets: [
+
 {
-type:"line",
-data:{
-labels:[],
-datasets:[
-{
-label:"Tegangan AC",
-data:[],
-borderWidth:2
+label: 'Sensor Cahaya (V)',
+data: [],
+borderWidth:2,
 },
+
 {
-label:"Arus",
-data:[],
-borderWidth:2
+label: 'Arus (A)',
+data: [],
+borderWidth:2,
 }
+
 ]
+
 },
-options:{animation:false}
+
+options:{
+animation:false,
+scales:{
+y:{
+beginAtZero:true
+}
+}
+}
+
 });
 
-async function updateData(){
+async function getData(){
 
-const res=await fetch(API);
-const data=await res.json();
+try{
 
-lightChart.data.labels=data.time;
-lightChart.data.datasets[0].data=data.SC;
+const response = await fetch(url);
+const data = await response.json();
 
-powerChart.data.labels=data.time;
-powerChart.data.datasets[0].data=data.AC;
-powerChart.data.datasets[1].data=data.I;
+document.getElementById("lightValue").innerHTML = data.SC;
+document.getElementById("voltageValue").innerHTML = data.AC;
+document.getElementById("currentValue").innerHTML = data.I;
 
-lightChart.update();
-powerChart.update();
+if(data.SC > 0.5){
+document.getElementById("statusText").innerHTML="⚡ ARCING DETECTED";
+}
+else{
+document.getElementById("statusText").innerHTML="Normal";
+}
 
-let lastLight=data.SC[data.SC.length-1];
-let lastVoltage=data.AC[data.AC.length-1];
-let lastCurrent=data.I[data.I.length-1];
+const time = new Date().toLocaleTimeString();
 
-document.getElementById("lightValue").innerHTML=lastLight+" V";
-document.getElementById("voltageValue").innerHTML=lastVoltage+" V";
-document.getElementById("currentValue").innerHTML=lastCurrent+" A";
+chart.data.labels.push(time);
+chart.data.datasets[0].data.push(data.SC);
+chart.data.datasets[1].data.push(data.I);
 
-if(lastLight>1.6){
+if(chart.data.labels.length>20){
 
-document.getElementById("status").innerHTML="⚡ ARCING DETECTED";
-document.getElementById("status").style.color="red";
+chart.data.labels.shift();
+chart.data.datasets[0].data.shift();
+chart.data.datasets[1].data.shift();
 
-}else{
+}
 
-document.getElementById("status").innerHTML="NORMAL";
-document.getElementById("status").style.color="lime";
+chart.update();
 
+}
+
+catch(error){
+console.log(error);
 }
 
 }
 
-setInterval(updateData,1000);
+setInterval(getData,1000);
 
 </script>
 
 </body>
+
 </html>
