@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>IoT Arcing Monitoring</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+font-family:Arial;
+background:#0f172a;
+color:white;
+text-align:center;
+}
+
+.header{
+font-size:28px;
+padding:20px;
+}
+
+.container{
+width:90%;
+margin:auto;
+}
+
+.grid{
+display:grid;
+grid-template-columns:1fr 1fr 1fr;
+gap:20px;
+}
+
+.card{
+background:#1e293b;
+padding:20px;
+border-radius:10px;
+}
+
+.value{
+font-size:24px;
+font-weight:bold;
+}
+
+.status{
+font-size:30px;
+font-weight:bold;
+}
+
+canvas{
+background:white;
+border-radius:10px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="header">
+ARCING MONITORING IoT SYSTEM
+</div>
+
+<div class="container">
+
+<div class="grid">
+
+<div class="card">
+Sensor Cahaya
+<div id="lightValue" class="value">0</div>
+</div>
+
+<div class="card">
+Tegangan AC
+<div id="voltageValue" class="value">0</div>
+</div>
+
+<div class="card">
+Arus
+<div id="currentValue" class="value">0</div>
+</div>
+
+</div>
+
+<br>
+
+<div class="card">
+Status Sistem
+<div id="status" class="status">Loading...</div>
+</div>
+
+<br>
+
+<div class="card">
+<h3>Grafik Sensor Cahaya</h3>
+<canvas id="lightChart"></canvas>
+</div>
+
+<br>
+
+<div class="card">
+<h3>Grafik Tegangan dan Arus</h3>
+<canvas id="powerChart"></canvas>
+</div>
+
+</div>
+
+<script>
+
+const API="PASTE_LINK_GOOGLE_SCRIPT_DISINI";
+
+const lightChart=new Chart(
+document.getElementById("lightChart"),
+{
+type:"line",
+data:{
+labels:[],
+datasets:[{
+label:"Sensor Cahaya (V)",
+data:[],
+borderWidth:2
+}]
+},
+options:{animation:false}
+});
+
+const powerChart=new Chart(
+document.getElementById("powerChart"),
+{
+type:"line",
+data:{
+labels:[],
+datasets:[
+{
+label:"Tegangan AC",
+data:[],
+borderWidth:2
+},
+{
+label:"Arus",
+data:[],
+borderWidth:2
+}
+]
+},
+options:{animation:false}
+});
+
+async function updateData(){
+
+const res=await fetch(API);
+const data=await res.json();
+
+lightChart.data.labels=data.time;
+lightChart.data.datasets[0].data=data.SC;
+
+powerChart.data.labels=data.time;
+powerChart.data.datasets[0].data=data.AC;
+powerChart.data.datasets[1].data=data.I;
+
+lightChart.update();
+powerChart.update();
+
+let lastLight=data.SC[data.SC.length-1];
+let lastVoltage=data.AC[data.AC.length-1];
+let lastCurrent=data.I[data.I.length-1];
+
+document.getElementById("lightValue").innerHTML=lastLight+" V";
+document.getElementById("voltageValue").innerHTML=lastVoltage+" V";
+document.getElementById("currentValue").innerHTML=lastCurrent+" A";
+
+if(lastLight>1.6){
+
+document.getElementById("status").innerHTML="⚡ ARCING DETECTED";
+document.getElementById("status").style.color="red";
+
+}else{
+
+document.getElementById("status").innerHTML="NORMAL";
+document.getElementById("status").style.color="lime";
+
+}
+
+}
+
+setInterval(updateData,1000);
+
+</script>
+
+</body>
+</html>
