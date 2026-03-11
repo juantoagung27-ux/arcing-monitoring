@@ -36,6 +36,17 @@ h1{margin-top:20px;}
     padding:20px;
     border-radius:10px;
 }
+button{
+    margin-top:20px;
+    padding:10px 20px;
+    font-size:16px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    background:#0f4c81;
+    color:white;
+}
+button:hover{background:#195a9f;}
 </style>
 </head>
 <body>
@@ -63,6 +74,7 @@ h1{margin-top:20px;}
     <div class="chartBox">
         <h2>Grafik Sensor Cahaya dan Arus</h2>
         <canvas id="chart"></canvas>
+        <button onclick="downloadData()">Download CSV</button>
     </div>
 </div>
 
@@ -95,9 +107,7 @@ const chart = new Chart(ctx, {
     },
     options:{
         animation:false,
-        scales:{
-            y:{beginAtZero:true}
-        }
+        scales:{y:{beginAtZero:true}}
     }
 });
 
@@ -143,6 +153,21 @@ async function getData(){
 
 // Update tiap 1 detik
 setInterval(getData, 1000);
+
+// Download CSV dari chart
+function downloadData(){
+    let csv = "Time,SC,I\n";
+    chart.data.labels.forEach((time,i)=>{
+        csv += `${time},${chart.data.datasets[0].data[i]},${chart.data.datasets[1].data[i]}\n`;
+    });
+    const blob = new Blob([csv], {type: 'text/csv'});
+    const urlBlob = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = urlBlob;
+    a.download = "chart_data.csv";
+    a.click();
+    URL.revokeObjectURL(urlBlob);
+}
 </script>
 
 </body>
