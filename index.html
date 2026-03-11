@@ -1,207 +1,149 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-
+<meta charset="UTF-8">
 <title>IoT Arcing Monitoring</title>
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <style>
-
 body{
-font-family: Arial;
-background:#0b1320;
-color:white;
-text-align:center;
+    font-family: Arial;
+    background:#0b1320;
+    color:white;
+    text-align:center;
 }
-
-h1{
-margin-top:20px;
-}
-
-.container{
-width:90%;
-margin:auto;
-}
-
-.cards{
-display:flex;
-justify-content:space-around;
-margin-top:30px;
-flex-wrap:wrap;
-}
-
+h1{margin-top:20px;}
+.container{width:90%; margin:auto;}
+.cards{display:flex; justify-content:space-around; margin-top:30px; flex-wrap:wrap;}
 .card{
-background:#1c2a44;
-padding:20px;
-border-radius:12px;
-width:250px;
-margin:10px;
-box-shadow:0 0 10px rgba(0,0,0,0.5);
+    background:#1c2a44;
+    padding:20px;
+    border-radius:12px;
+    width:250px;
+    margin:10px;
+    box-shadow:0 0 10px rgba(0,0,0,0.5);
 }
-
-.value{
-font-size:32px;
-margin-top:10px;
-}
-
+.value{font-size:32px; margin-top:10px;}
 .status{
-margin-top:30px;
-padding:20px;
-border-radius:10px;
-font-size:30px;
-background:#1c2a44;
+    margin-top:30px;
+    padding:20px;
+    border-radius:10px;
+    font-size:30px;
+    background:#1c2a44;
 }
-
 .chartBox{
-margin-top:40px;
-background:#1c2a44;
-padding:20px;
-border-radius:10px;
+    margin-top:40px;
+    background:#1c2a44;
+    padding:20px;
+    border-radius:10px;
 }
-
 </style>
-
 </head>
-
 <body>
 
 <h1>⚡ ARCING MONITORING IoT SYSTEM</h1>
 
 <div class="container">
+    <div class="cards">
+        <div class="card">
+            <h2>Sensor Cahaya</h2>
+            <div id="light" class="value">0</div>
+        </div>
+        <div class="card">
+            <h2>Tegangan AC</h2>
+            <div id="voltage" class="value">0</div>
+        </div>
+        <div class="card">
+            <h2>Arus</h2>
+            <div id="current" class="value">0</div>
+        </div>
+    </div>
 
-<div class="cards">
+    <div id="status" class="status">Status : Loading...</div>
 
-<div class="card">
-<h2>Sensor Cahaya</h2>
-<div id="light" class="value">0</div>
-</div>
-
-<div class="card">
-<h2>Tegangan AC</h2>
-<div id="voltage" class="value">0</div>
-</div>
-
-<div class="card">
-<h2>Arus</h2>
-<div id="current" class="value">0</div>
-</div>
-
-</div>
-
-<div id="status" class="status">
-Status : Loading...
-</div>
-
-<div class="chartBox">
-
-<h2>Grafik Sensor Cahaya dan Arus</h2>
-
-<canvas id="chart"></canvas>
-
-</div>
-
+    <div class="chartBox">
+        <h2>Grafik Sensor Cahaya dan Arus</h2>
+        <canvas id="chart"></canvas>
+    </div>
 </div>
 
 <script>
+// Ganti dengan URL Apps Script Web App kamu
+const url = "https://script.google.com/macros/s/AKfycbwK2hZ5hap5A4XvCfd5_qN89Afojl4fh6gXWBYQDrQXmSn4O1TR2Bbc1WG1XI6Atn1L2g/exec";
 
-const url="https://script.google.com/macros/s/AKfycbwK2hZ5hap5A4XvCfd5_qN89Afojl4fh6gXWBYQDrQXmSn4O1TR2Bbc1WG1XI6Atn1L2g/exec";
-
-const ctx=document.getElementById("chart");
-
-const chart=new Chart(ctx,{
-
-type:"line",
-
-data:{
-labels:[],
-datasets:[
-
-{
-label:"Sensor Cahaya (V)",
-data:[],
-borderColor:"yellow",
-borderWidth:2,
-tension:0.4
-},
-
-{
-label:"Arus (A)",
-data:[],
-borderColor:"cyan",
-borderWidth:2,
-tension:0.4
-}
-
-]
-},
-
-options:{
-animation:false,
-scales:{
-y:{
-beginAtZero:true
-}
-}
-}
-
+// Inisialisasi Chart.js
+const ctx = document.getElementById("chart");
+const chart = new Chart(ctx, {
+    type: "line",
+    data: {
+        labels: [],
+        datasets: [
+            {
+                label:"Sensor Cahaya (V)",
+                data:[],
+                borderColor:"yellow",
+                borderWidth:2,
+                tension:0.4
+            },
+            {
+                label:"Arus (A)",
+                data:[],
+                borderColor:"cyan",
+                borderWidth:2,
+                tension:0.4
+            }
+        ]
+    },
+    options:{
+        animation:false,
+        scales:{
+            y:{beginAtZero:true}
+        }
+    }
 });
 
+// Ambil data terbaru dari Google Sheet
 async function getData(){
+    try{
+        const res = await fetch(url);
+        const data = await res.json();
 
-try{
+        // Update cards
+        document.getElementById("light").innerHTML = data.SC;
+        document.getElementById("voltage").innerHTML = data.AC;
+        document.getElementById("current").innerHTML = data.I;
 
-const res=await fetch(url);
-const data=await res.json();
+        // Update status
+        let status = document.getElementById("status");
+        if(data.SC > 0.5){
+            status.innerHTML = "⚡ ARCING DETECTED";
+            status.style.background = "red";
+        } else {
+            status.innerHTML = "Normal";
+            status.style.background = "#1c2a44";
+        }
 
-document.getElementById("light").innerHTML=data.SC;
-document.getElementById("voltage").innerHTML=data.AC;
-document.getElementById("current").innerHTML=data.I;
+        // Update chart
+        let time = new Date().toLocaleTimeString();
+        chart.data.labels.push(time);
+        chart.data.datasets[0].data.push(data.SC);
+        chart.data.datasets[1].data.push(data.I);
 
-let status=document.getElementById("status");
+        if(chart.data.labels.length > 25){
+            chart.data.labels.shift();
+            chart.data.datasets[0].data.shift();
+            chart.data.datasets[1].data.shift();
+        }
 
-if(data.SC>0.5){
+        chart.update();
 
-status.innerHTML="⚡ ARCING DETECTED";
-status.style.background="red";
-
-}else{
-
-status.innerHTML="Normal";
-status.style.background="#1c2a44";
-
+    } catch(err){
+        console.error("Error fetching data:", err);
+    }
 }
 
-let time=new Date().toLocaleTimeString();
-
-chart.data.labels.push(time);
-
-chart.data.datasets[0].data.push(data.SC);
-chart.data.datasets[1].data.push(data.I);
-
-if(chart.data.labels.length>25){
-
-chart.data.labels.shift();
-chart.data.datasets[0].data.shift();
-chart.data.datasets[1].data.shift();
-
-}
-
-chart.update();
-
-}catch(err){
-
-console.log(err);
-
-}
-
-}
-
-setInterval(getData,1000);
-
+// Update tiap 1 detik
+setInterval(getData, 1000);
 </script>
 
 </body>
-
 </html>
